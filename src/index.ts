@@ -17,6 +17,8 @@ const port = process.env.PORT || 8080;
 
 let sessionId;
 
+app.disable('etag');
+
 app.use((req: Request, res: Response, next: NextFunction) => {
   res.setHeader('Access-Control-Allow-Origin', allowOrigin);
   next();
