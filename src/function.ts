@@ -95,7 +95,7 @@ export async function getGroups(
       phong: row[5],
       siso: +row[6],
       conlai: +row[7],
-      // tuanhoc: row[8].match(/\d/g).map(Number),
+      tuanhoc: row[8],
       lopHP: row[9],
     };
 
@@ -115,7 +115,7 @@ export async function getGroups(
         kihieu: key,
         siso: value[0].siso,
         conlai: value[0].conlai,
-        // tuanhoc: value[0].tuanhoc,
+        tuanhoc: value[0].tuanhoc,
         lopHP: value[0].lopHP,
         buoihoc: value
           .map((l) => ({
