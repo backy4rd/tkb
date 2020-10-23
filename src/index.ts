@@ -12,7 +12,7 @@ const app: Application = express();
 
 const mssv = process.env.MSSV;
 const matkhau = process.env.MATKHAU;
-const allowOrigin = process.env.ALLOW_ORIGIN || '*';
+const allowOrigin = process.env.ALLOW_ORIGIN?.split(',');
 const port = process.env.PORT || 8080;
 
 let sessionId;
@@ -20,7 +20,14 @@ let sessionId;
 app.disable('etag');
 
 app.use((req: Request, res: Response, next: NextFunction) => {
-  res.setHeader('Access-Control-Allow-Origin', allowOrigin);
+  const origin = req.headers.origin;
+
+  if (allowOrigin === undefined) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  } else if (allowOrigin.indexOf(origin) !== -1) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+
   next();
 });
 
