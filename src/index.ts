@@ -1,79 +1,86 @@
-import * as path from 'path';
-import * as express from 'express';
-import * as rootCas from 'ssl-root-cas';
-import { Request, Response, NextFunction, Application } from 'express';
+import * as path from "path";
+import * as express from "express";
+import * as rootCas from "ssl-root-cas";
+import { Request, Response, NextFunction, Application } from "express";
 
-import { getGroups, login } from './function';
+import { getGroupsAndCache, login } from "./function";
 
-rootCas.addFile(path.resolve(__dirname, '../cert/htql.pem'));
-require('https').globalAgent.options.ca = rootCas;
+rootCas.addFile(path.resolve(__dirname, "../cert/htql.pem"));
+require("https").globalAgent.options.ca = rootCas;
 
 const app: Application = express();
 
 const mssv = process.env.MSSV;
 const matkhau = process.env.MATKHAU;
-const allowOrigin = process.env.ALLOW_ORIGIN?.split(',');
+const allowOrigin = process.env.ALLOW_ORIGIN?.split(",");
 const port = process.env.PORT || 8080;
 
 let sessionId;
 
-app.disable('etag');
+app.disable("etag");
 
 app.use((req: Request, res: Response, next: NextFunction) => {
-  const origin = req.headers.origin;
+    const origin = req.headers.origin;
 
-  if (allowOrigin === undefined) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-  } else if (allowOrigin.indexOf(origin) !== -1) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  }
+    if (allowOrigin === undefined) {
+        res.setHeader("Access-Control-Allow-Origin", "*");
+    } else if (allowOrigin.indexOf(origin) !== -1) {
+        res.setHeader("Access-Control-Allow-Origin", origin);
+    }
 
-  next();
+    next();
 });
 
-app.get('/groups', async function _doGet(req: Request, res: Response) {
-  try {
-    const namhoc = +req.query.namhoc;
-    const mahp = req.query.mahp as string;
-    const hocky = +req.query.hocky;
+app.get("/groups", async function _doGet(req: Request, res: Response) {
+    try {
+        const namhoc = +req.query.namhoc;
+        const mahp = req.query.mahp as string;
+        const hocky = +req.query.hocky;
 
-    if (!mahp || !namhoc || !hocky) {
-      throw new Error('invalid or missing query parameters');
+        if (!mahp || !namhoc || !hocky) {
+            throw new Error("invalid or missing query parameters");
+        }
+
+        const subjectIds = mahp
+            .trim()
+            .replace(/\s+/g, "")
+            .split(",")
+            .map((e) => e.toUpperCase());
+
+        const responseData = {};
+
+        await Promise.all(
+            subjectIds.map((subjectId) =>
+                getGroupsAndCache(hocky, namhoc, subjectId, sessionId).then(
+                    (group) => {
+                        responseData[subjectId] = group;
+                    }
+                )
+            )
+        );
+
+        res.status(200).json({ data: responseData });
+
+        // handle exception
+    } catch (err) {
+        if (err.message === "invalid session id") {
+            console.log("retrive session id");
+            sessionId = await login(mssv, matkhau);
+            return _doGet(req, res);
+        }
+
+        res.status(400).json({
+            error: { message: err.message },
+        });
     }
-
-    const subjectIds = mahp.trim().replace(/\s+/g, '').split(',');
-    const responseData = {};
-
-    await Promise.all(
-      subjectIds.map((subjectId) =>
-        getGroups(hocky, namhoc, subjectId, sessionId).then((group) => {
-          responseData[subjectId.toUpperCase()] = group;
-        }),
-      ),
-    );
-
-    res.status(200).json({ data: responseData });
-
-    // handle exception
-  } catch (err) {
-    if (err.message === 'invalid session id') {
-      console.log('retrive session id');
-      sessionId = await login(mssv, matkhau);
-      return _doGet(req, res);
-    }
-
-    res.status(400).json({
-      error: { message: err.message },
-    });
-  }
 });
 
 login(mssv, matkhau)
-  .then((PHPSESSID) => {
-    sessionId = PHPSESSID;
-  })
-  .then(() => {
-    app.listen(port, () => {
-      console.log('server listening on port ' + port);
+    .then((PHPSESSID) => {
+        sessionId = PHPSESSID;
+    })
+    .then(() => {
+        app.listen(port, () => {
+            console.log("server listening on port " + port);
+        });
     });
-  });
