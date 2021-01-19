@@ -7,6 +7,7 @@ const EXPIRE = parseInt(process.env.EXPIRE) || 3600;
 
 const groupsPattern = /(?<=class="((main_3)|(level_1_\d))"( style.+)?>).+?(?=<\/td>)/g;
 const PhpSessIdPattern = /(?<=PHPSESSID=).+?(?=;)/;
+const subjectNamePattern = /(?<=Tên Học phần : ).+?(?=\t)/;
 
 const loginUrl = "https://qldt.ctu.edu.vn/htql/sinhvien/dang_nhap.php";
 const getGroupsUrl =
@@ -139,4 +140,30 @@ export async function getGroupsAndCache(
     cache.set({ subjectId, year, semester }, subject, EXPIRE);
 
     return subject;
+}
+
+export async function getSubjectName(
+    semester: number,
+    year: number,
+    subjectId: string,
+    sessionId: string
+): Promise<string> {
+    const data = await request.post(getGroupsUrl, {
+        headers: {
+            cookie: `PHPSESSID=${sessionId}`,
+        },
+        form: {
+            cmbHocKy: semester,
+            cmbNamHoc: year,
+            txtMaMH: subjectId,
+        },
+    });
+
+    if (data.includes("../../logout.php")) {
+        throw new Error("invalid session id");
+    }
+
+    const [subjectName] = data.match(subjectNamePattern);
+
+    return subjectName === "\t" ? null : subjectName;
 }
