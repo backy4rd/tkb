@@ -13,11 +13,11 @@ const app: Application = express();
 
 const mssv = process.env.MSSV;
 const matkhau = process.env.MATKHAU;
-const connectionString = process.env.MONGODB_URI;
+const mongoUri = process.env.MONGODB_URI;
 const allowOrigin = process.env.ALLOW_ORIGIN?.split(",");
 const port = process.env.PORT || 8080;
 
-if (!connectionString || !mssv || !matkhau) {
+if (!mongoUri || !mssv || !matkhau) {
     throw new Error("missing env variable");
 }
 
@@ -37,10 +37,10 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     next();
 });
 
-app.get("/groups", async function _doGet(req: Request, res: Response) {
+app.get("/groups/:subjectIds", async function _doGet(req: Request, res: Response) {
     try {
         const namhoc = +req.query.namhoc;
-        const mahp = req.query.mahp as string;
+        const mahp = req.params.subjectIds as string;
         const hocky = +req.query.hocky;
 
         if (!mahp || !namhoc || !hocky) {
@@ -57,11 +57,9 @@ app.get("/groups", async function _doGet(req: Request, res: Response) {
 
         await Promise.all(
             subjectIds.map((subjectId) =>
-                getGroupsAndCache(hocky, namhoc, subjectId, sessionId).then(
-                    (group) => {
-                        responseData[subjectId] = group;
-                    }
-                )
+                getGroupsAndCache(hocky, namhoc, subjectId, sessionId).then((group) => {
+                    responseData[subjectId] = group;
+                })
             )
         );
 
@@ -81,10 +79,10 @@ app.get("/groups", async function _doGet(req: Request, res: Response) {
     }
 });
 
-app.get("/subjects", async function _doGet(req: Request, res: Response) {
+app.get("/subjects/:subjectId", async function _doGet(req: Request, res: Response) {
     try {
         const namhoc = +req.query.namhoc;
-        const mahp = req.query.mahp as string;
+        const mahp = req.params.subjectId as string;
         const hocky = +req.query.hocky;
 
         if (!mahp || !namhoc || !hocky) {
@@ -97,12 +95,7 @@ app.get("/subjects", async function _doGet(req: Request, res: Response) {
             return res.status(200).json({ data: storedSubjectName });
         }
 
-        const subjectName = await getSubjectName(
-            hocky,
-            namhoc,
-            mahp,
-            sessionId
-        );
+        const subjectName = await getSubjectName(hocky, namhoc, mahp, sessionId);
 
         if (subjectName === null) {
             return res.status(404).json({ error: "subject not found" });
@@ -126,7 +119,7 @@ app.get("/subjects", async function _doGet(req: Request, res: Response) {
     }
 });
 
-db.createConnection(connectionString)
+db.createConnection(mongoUri)
     .then(() => login(mssv, matkhau))
     .then((PHPSESSID) => {
         sessionId = PHPSESSID;

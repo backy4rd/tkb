@@ -5,15 +5,9 @@ const collectionName = "tenhocphan";
 class Database {
     public collection: Collection;
 
-    public async createConnection(connectionString: string): Promise<void> {
-        const url = connectionString.slice(
-            0,
-            connectionString.lastIndexOf("/")
-        );
-        const dbName = connectionString.slice(
-            connectionString.lastIndexOf("/") + 1,
-            connectionString.indexOf("?")
-        );
+    public async createConnection(mongoUri: string): Promise<void> {
+        const url = mongoUri.slice(0, mongoUri.lastIndexOf("/"));
+        const dbName = mongoUri.slice(mongoUri.lastIndexOf("/") + 1, mongoUri.indexOf("?"));
 
         const client = new MongoClient(url, {
             useNewUrlParser: true,

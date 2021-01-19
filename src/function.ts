@@ -10,15 +10,10 @@ const PhpSessIdPattern = /(?<=PHPSESSID=).+?(?=;)/;
 const subjectNamePattern = /(?<=Tên Học phần : ).+?(?=\t)/;
 
 const loginUrl = "https://qldt.ctu.edu.vn/htql/sinhvien/dang_nhap.php";
-const getGroupsUrl =
-    "https://qldt.ctu.edu.vn/htql/dkmh/student/index.php?action=dmuc_mhoc_hky";
-const grantAccessUrl =
-    "https://qldt.ctu.edu.vn/htql/dkmh/student/dang_nhap.php";
+const getGroupsUrl = "https://qldt.ctu.edu.vn/htql/dkmh/student/index.php?action=dmuc_mhoc_hky";
+const grantAccessUrl = "https://qldt.ctu.edu.vn/htql/dkmh/student/dang_nhap.php";
 
-export async function login(
-    studentId: string,
-    password: string
-): Promise<string> {
+export async function login(studentId: string, password: string): Promise<string> {
     const response = await request.post(loginUrl, {
         form: {
             txtDinhDanh: studentId,
@@ -31,9 +26,7 @@ export async function login(
         throw new Error("login fail");
     }
 
-    const [PHPSESSID] = response.headers["set-cookie"]
-        .join(", ")
-        .match(PhpSessIdPattern);
+    const [PHPSESSID] = response.headers["set-cookie"].join(", ").match(PhpSessIdPattern);
 
     // grant access to dkmh
     await request.post(grantAccessUrl, {
@@ -111,9 +104,7 @@ export async function getGroupsAndCache(
     }
 
     if (groups.length === 0) {
-        throw new Error(
-            `invalid subjectId or subject isn't opened in this semester`
-        );
+        throw new Error(`invalid subjectId or subject isn't opened in this semester`);
     }
 
     const subject = _.chain(groups)
