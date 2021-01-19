@@ -46,6 +46,21 @@ class Database {
             });
         });
     }
+
+    public findAll(): Promise<{ [mahp: string]: string }> {
+        return new Promise((resolve, reject) => {
+            this.collection.find({}).toArray((err, result) => {
+                if (err) return reject(err);
+
+                const returnValue = result.reduce((acc, cur) => {
+                    acc[cur.mahp] = cur.tenhp;
+                    return acc;
+                }, {});
+
+                resolve(returnValue);
+            });
+        });
+    }
 }
 
 export default new Database();

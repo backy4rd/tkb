@@ -79,6 +79,20 @@ app.get("/groups/:subjectIds", async function _doGet(req: Request, res: Response
     }
 });
 
+app.get("/subjects", async function (req: Request, res: Response) {
+    try {
+        const subjects = await db.findAll();
+
+        res.status(200).json({ data: subjects });
+
+        // handle exception
+    } catch (err) {
+        res.status(400).json({
+            error: { message: err.message },
+        });
+    }
+});
+
 app.get("/subjects/:subjectId", async function _doGet(req: Request, res: Response) {
     try {
         const namhoc = +req.query.namhoc;
@@ -101,7 +115,7 @@ app.get("/subjects/:subjectId", async function _doGet(req: Request, res: Respons
             return res.status(404).json({ error: "subject not found" });
         }
 
-        await db.insert(mahp, subjectName);
+        await db.insert(mahp.toUpperCase(), subjectName);
 
         return res.status(200).json({ data: subjectName });
 
