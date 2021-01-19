@@ -105,7 +105,7 @@ app.get("/subjects", async function _doGet(req: Request, res: Response) {
         );
 
         if (subjectName === null) {
-            return res.status(200).json({ error: "subject not found" });
+            return res.status(404).json({ error: "subject not found" });
         }
 
         await db.insert(mahp, subjectName);
