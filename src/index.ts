@@ -95,7 +95,7 @@ app.get("/subjects", async function (req: Request, res: Response) {
 
 app.get("/subjects/:subjectId", async function _doGet(req: Request, res: Response) {
     try {
-        const mahp = req.params.subjectId as string;
+        const mahp = req.params.subjectId.toUpperCase();
 
         const storedSubjectName = await db.find(mahp);
 
@@ -109,7 +109,7 @@ app.get("/subjects/:subjectId", async function _doGet(req: Request, res: Respons
             return res.status(404).json({ error: "subject not found" });
         }
 
-        await db.insert(mahp.toUpperCase(), subjectName);
+        await db.insert(mahp, subjectName);
 
         return res.status(200).json({ data: subjectName });
 

@@ -38,7 +38,7 @@ export function get({ subjectId, year, semester }: Key): any {
         return undefined;
     }
 
-    return cache?.[semester]?.[year]?.[subjectId].value;
+    return cache[semester][year][subjectId].value;
 }
 
 // exired remover
