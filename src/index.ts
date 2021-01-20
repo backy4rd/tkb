@@ -3,7 +3,7 @@ import * as express from "express";
 import * as rootCas from "ssl-root-cas";
 import { Request, Response, NextFunction, Application } from "express";
 
-import { getGroupsAndCache, getSubjectName, login } from "./function";
+import { getGroupsAndCache, getSubjectName, getAvalibleSchoolYear, login } from "./function";
 import db from "./db";
 
 rootCas.addFile(path.resolve(__dirname, "../cert/htql.pem"));
@@ -21,7 +21,7 @@ if (!mongoUri || !mssv || !matkhau) {
     throw new Error("missing env variable");
 }
 
-let sessionId;
+let sessionId, year, semester;
 
 app.disable("etag");
 
@@ -43,7 +43,7 @@ app.get("/groups/:subjectIds", async function _doGet(req: Request, res: Response
         const mahp = req.params.subjectIds as string;
         const hocky = +req.query.hocky;
 
-        if (!mahp || !namhoc || !hocky) {
+        if (!namhoc || !hocky) {
             throw new Error("invalid or missing query parameters");
         }
 
@@ -95,13 +95,7 @@ app.get("/subjects", async function (req: Request, res: Response) {
 
 app.get("/subjects/:subjectId", async function _doGet(req: Request, res: Response) {
     try {
-        const namhoc = +req.query.namhoc;
         const mahp = req.params.subjectId as string;
-        const hocky = +req.query.hocky;
-
-        if (!mahp || !namhoc || !hocky) {
-            throw new Error("invalid or missing query parameters");
-        }
 
         const storedSubjectName = await db.find(mahp);
 
@@ -109,7 +103,7 @@ app.get("/subjects/:subjectId", async function _doGet(req: Request, res: Respons
             return res.status(200).json({ data: storedSubjectName });
         }
 
-        const subjectName = await getSubjectName(hocky, namhoc, mahp, sessionId);
+        const subjectName = await getSubjectName(semester, year, mahp, sessionId);
 
         if (subjectName === null) {
             return res.status(404).json({ error: "subject not found" });
@@ -133,13 +127,19 @@ app.get("/subjects/:subjectId", async function _doGet(req: Request, res: Respons
     }
 });
 
-db.createConnection(mongoUri)
-    .then(() => login(mssv, matkhau))
-    .then((PHPSESSID) => {
-        sessionId = PHPSESSID;
-    })
-    .then(() => {
-        app.listen(port, () => {
-            console.log("server listening on port " + port);
-        });
+async function init() {
+    await db.createConnection(mongoUri);
+
+    const PHPSESSID = await login(mssv, matkhau);
+    sessionId = PHPSESSID;
+
+    const schoolYear = await getAvalibleSchoolYear(sessionId);
+    year = schoolYear.year;
+    semester = schoolYear.semester;
+
+    app.listen(port, () => {
+        console.log("server listening on port " + port);
     });
+}
+
+init();

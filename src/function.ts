@@ -6,12 +6,31 @@ import * as cache from "./cache";
 const EXPIRE = parseInt(process.env.EXPIRE) || 3600;
 
 const groupsPattern = /(?<=class="((main_3)|(level_1_\d))"( style.+)?>).+?(?=<\/td>)/g;
-const PhpSessIdPattern = /(?<=PHPSESSID=).+?(?=;)/;
+const phpSessIdPattern = /(?<=PHPSESSID=).+?(?=;)/;
 const subjectNamePattern = /(?<=Tên Học phần : ).+?(?=\t)/;
+const semesterPattern = /(?<=selected(\s+?)value=")1|2|3(?=")/;
+const yearPattern = /(?<=selected(\s+?)value=")20\d\d(?=")/;
 
 const loginUrl = "https://qldt.ctu.edu.vn/htql/sinhvien/dang_nhap.php";
 const getGroupsUrl = "https://qldt.ctu.edu.vn/htql/dkmh/student/index.php?action=dmuc_mhoc_hky";
 const grantAccessUrl = "https://qldt.ctu.edu.vn/htql/dkmh/student/dang_nhap.php";
+
+type SchoolYear = { year: number; semester: number };
+
+export async function getAvalibleSchoolYear(sessionId: string): Promise<SchoolYear> {
+    const data = await request.get(getGroupsUrl, {
+        headers: {
+            Cookie: `PHPSESSID=${sessionId}`,
+        },
+    });
+
+    const year = data.match(yearPattern)?.[0];
+    const semester = data.match(semesterPattern)?.[0];
+
+    if (!year || !semester) throw new Error("error occur in getAvalibleSchoolYear");
+
+    return { year: parseInt(year), semester: parseInt(semester) };
+}
 
 export async function login(studentId: string, password: string): Promise<string> {
     const response = await request.post(loginUrl, {
@@ -26,7 +45,7 @@ export async function login(studentId: string, password: string): Promise<string
         throw new Error("login fail");
     }
 
-    const [PHPSESSID] = response.headers["set-cookie"].join(", ").match(PhpSessIdPattern);
+    const [PHPSESSID] = response.headers["set-cookie"].join(", ").match(phpSessIdPattern);
 
     // grant access to dkmh
     await request.post(grantAccessUrl, {
