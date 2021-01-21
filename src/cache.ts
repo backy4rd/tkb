@@ -41,7 +41,7 @@ export function get({ subjectId, year, semester }: Key): any {
     return cache[semester][year][subjectId].value;
 }
 
-// exired remover
+// expired remover
 setInterval(() => {
     for (const semester in cache) {
         for (const year in cache[semester]) {

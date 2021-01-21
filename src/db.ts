@@ -14,10 +14,10 @@ export interface IDatabase {
 }
 
 class MongoDB implements IDatabase {
+    private readonly collectionName = "subjects";
     private collection: Collection;
-    private collectionName = "subjects";
 
-    public async init(mongoUri: string): Promise<void> {
+    public init(mongoUri: string): Promise<void> {
         const { protocol, auth, host, pathname } = url.parse(mongoUri);
 
         const uri = `${protocol}//${auth}@${host}`;
@@ -113,7 +113,7 @@ class FileDB implements IDatabase {
         return json[subjectId];
     }
 
-    public async findAll(): Promise<SubjectNames> {
+    public findAll(): Promise<SubjectNames> {
         return this.read();
     }
 

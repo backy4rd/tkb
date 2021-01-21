@@ -4,7 +4,7 @@ import * as dotenv from "dotenv";
 import * as rootCas from "ssl-root-cas";
 import { Request, Response, NextFunction, Application } from "express";
 
-import { getGroupsAndCache, getSubjectName, getAvalibleSchoolYear, login } from "./function";
+import { getGroupsAndCache, getSubjectName, getAvailableSchoolYear, login } from "./function";
 import { IDatabase, mongoDB, fileDB } from "./db";
 
 rootCas.addFile(path.resolve(__dirname, "../cert/htql.pem"));
@@ -146,7 +146,7 @@ async function init() {
     const PHPSESSID = await login(studentId, password);
     sessionId = PHPSESSID;
 
-    const schoolYear = await getAvalibleSchoolYear(sessionId);
+    const schoolYear = await getAvailableSchoolYear(sessionId);
     year = schoolYear.year;
     semester = schoolYear.semester;
 

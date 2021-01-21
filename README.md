@@ -14,7 +14,8 @@ Create .env file or define these enviroment variables:
  - `MONGODB_URI`: mongodb connection uri (It will use file instead if this variable isn't defined).
  - `STUDENT_ID`: student id that use for login at htql.ctu.edu.vn
  - `PASSWORD`: the password that use for login at htql.ctu.edu.vn
- - `ALLOW_ORIGIN`: list of allow origin separate with <,>.
+ - `ALLOW_ORIGIN`: list of allow origin separated by `,`.
+ - `EXPIRE`: expire time of cached subject groups in second (default: 3600).
 
 Install dependencies:
 ```
@@ -51,7 +52,7 @@ Return the open groups in specific year and semester of subjects.
 
 *Parameters:*
 
- - `subject_ids`: string (each subject separate by <,> *Ex: CT100,CT200*).
+ - `subject_ids`: string (each subject separated by `,`. *ex: CT100,CT200*).
  - `year`: number (if school year is 2020-2021, this value will be 2021).
  - `semester`: number (1, 2 or 3).
 

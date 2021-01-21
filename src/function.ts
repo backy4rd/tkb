@@ -17,7 +17,7 @@ const grantAccessUrl = "https://qldt.ctu.edu.vn/htql/dkmh/student/dang_nhap.php"
 
 type SchoolYear = { year: number; semester: number };
 
-export async function getAvalibleSchoolYear(sessionId: string): Promise<SchoolYear> {
+export async function getAvailableSchoolYear(sessionId: string): Promise<SchoolYear> {
     const data = await request.get(getGroupsUrl, {
         headers: {
             Cookie: `PHPSESSID=${sessionId}`,
