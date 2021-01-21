@@ -5,7 +5,7 @@ import * as rootCas from "ssl-root-cas";
 import { Request, Response, NextFunction, Application } from "express";
 
 import { getGroupsAndCache, getSubjectName, getAvalibleSchoolYear, login } from "./function";
-import db from "./db";
+import { IDatabase, mongoDB, fileDB } from "./db";
 
 rootCas.addFile(path.resolve(__dirname, "../cert/htql.pem"));
 require("https").globalAgent.options.ca = rootCas;
@@ -20,11 +20,20 @@ const mongoUri = process.env.MONGODB_URI;
 const allowOrigin = process.env.ALLOW_ORIGIN?.split(",");
 const port = process.env.PORT || 8080;
 
-if (!mongoUri || !studentId || !password) {
+let sessionId: string;
+let year: number;
+let semester: number;
+let db: IDatabase;
+
+if (!studentId || !password) {
     throw new Error("missing env variable");
 }
 
-let sessionId, year, semester;
+if (mongoUri) {
+    db = mongoDB;
+} else {
+    db = fileDB;
+}
 
 app.disable("etag");
 
@@ -128,7 +137,11 @@ app.get("/subjects/:subjectId", async function _doGet(req: Request, res: Respons
 });
 
 async function init() {
-    await db.createConnection(mongoUri);
+    if (mongoUri) {
+        await db.init(mongoUri);
+    } else {
+        await db.init(path.resolve(__dirname, "../db.json"));
+    }
 
     const PHPSESSID = await login(studentId, password);
     sessionId = PHPSESSID;

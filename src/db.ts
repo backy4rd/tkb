@@ -1,12 +1,23 @@
 import * as url from "url";
+import * as fs from "fs";
 import { MongoClient, Collection } from "mongodb";
 
-const collectionName = "tenhocphan";
+type SubjectNames = {
+    [subjectId: string]: string;
+};
 
-class Database {
-    public collection: Collection;
+export interface IDatabase {
+    init(uri: string): Promise<void>;
+    insert(subjectId: string, subjectName: string): Promise<void>;
+    find(subjectId: string): Promise<string>;
+    findAll(): Promise<SubjectNames>;
+}
 
-    public async createConnection(mongoUri: string): Promise<void> {
+class MongoDB implements IDatabase {
+    private collection: Collection;
+    private collectionName = "subjects";
+
+    public async init(mongoUri: string): Promise<void> {
         const { protocol, auth, host, pathname } = url.parse(mongoUri);
 
         const uri = `${protocol}//${auth}@${host}`;
@@ -21,7 +32,7 @@ class Database {
             client.connect((err) => {
                 if (err) return reject(err);
 
-                this.collection = client.db(dbName).collection(collectionName);
+                this.collection = client.db(dbName).collection(this.collectionName);
 
                 resolve();
             });
@@ -50,7 +61,7 @@ class Database {
         });
     }
 
-    public findAll(): Promise<{ [subjectId: string]: string }> {
+    public findAll(): Promise<SubjectNames> {
         return new Promise((resolve, reject) => {
             this.collection.find({}).toArray((err, result) => {
                 if (err) return reject(err);
@@ -66,4 +77,66 @@ class Database {
     }
 }
 
-export default new Database();
+class FileDB implements IDatabase {
+    private filepath: string;
+
+    public init(filepath: string): Promise<void> {
+        return new Promise((resolve, reject) => {
+            this.filepath = filepath;
+
+            fs.exists(filepath, (exists) => {
+                if (exists) return resolve();
+
+                fs.writeFile(filepath, "{}", (err) => {
+                    if (err) return reject(err);
+
+                    resolve();
+                });
+            });
+        });
+    }
+
+    public async insert(subjectId: string, subjectName: string): Promise<void> {
+        const json = await this.read();
+
+        json[subjectId] = subjectName;
+        await this.write(json);
+    }
+
+    public async find(subjectId: string): Promise<string> {
+        const json = await this.read();
+
+        if (!json[subjectId]) {
+            return null;
+        }
+
+        return json[subjectId];
+    }
+
+    public async findAll(): Promise<SubjectNames> {
+        return this.read();
+    }
+
+    private read(): Promise<SubjectNames> {
+        return new Promise((resolve, reject) => {
+            fs.readFile(this.filepath, "utf8", (err, data) => {
+                if (err) return reject(err);
+
+                resolve(JSON.parse(data));
+            });
+        });
+    }
+
+    private write(data: SubjectNames): Promise<void> {
+        return new Promise((resolve, reject) => {
+            fs.writeFile(this.filepath, JSON.stringify(data), (err) => {
+                if (err) return reject(err);
+
+                resolve();
+            });
+        });
+    }
+}
+
+export const mongoDB = new MongoDB();
+export const fileDB = new FileDB();
