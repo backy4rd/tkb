@@ -12,8 +12,6 @@ class Database {
         const uri = `${protocol}//${auth}@${host}`;
         const dbName = pathname.slice(1); // remove slash
 
-        console.log(uri, dbName);
-
         const client = new MongoClient(uri, {
             useNewUrlParser: true,
             useUnifiedTopology: true,

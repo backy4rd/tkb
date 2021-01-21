@@ -1,5 +1,6 @@
 import * as path from "path";
 import * as express from "express";
+import * as dotenv from "dotenv";
 import * as rootCas from "ssl-root-cas";
 import { Request, Response, NextFunction, Application } from "express";
 
@@ -8,6 +9,8 @@ import db from "./db";
 
 rootCas.addFile(path.resolve(__dirname, "../cert/htql.pem"));
 require("https").globalAgent.options.ca = rootCas;
+
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const app: Application = express();
 
