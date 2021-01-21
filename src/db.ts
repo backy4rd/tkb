@@ -28,9 +28,9 @@ class Database {
         });
     }
 
-    public insert(mahp: string, tenhp: string): Promise<void> {
+    public insert(subjectId: string, subjectName: string): Promise<void> {
         return new Promise((resolve, reject) => {
-            this.collection.insertOne({ mahp, tenhp }, (err) => {
+            this.collection.insertOne({ subjectId, subjectName }, (err) => {
                 if (err) return reject(err);
 
                 resolve();
@@ -38,25 +38,25 @@ class Database {
         });
     }
 
-    public find(mahp: string): Promise<string> {
+    public find(subjectId: string): Promise<string> {
         return new Promise((resolve, reject) => {
-            this.collection.find({ mahp }).toArray((err, result) => {
+            this.collection.find({ subjectId }).toArray((err, result) => {
                 if (err) return reject(err);
 
                 if (result.length === 0) return resolve(null);
 
-                resolve(result[0].tenhp);
+                resolve(result[0].subjectName);
             });
         });
     }
 
-    public findAll(): Promise<{ [mahp: string]: string }> {
+    public findAll(): Promise<{ [subjectId: string]: string }> {
         return new Promise((resolve, reject) => {
             this.collection.find({}).toArray((err, result) => {
                 if (err) return reject(err);
 
                 const returnValue = result.reduce((acc, cur) => {
-                    acc[cur.mahp] = cur.tenhp;
+                    acc[cur.subjectId] = cur.subjectName;
                     return acc;
                 }, {});
 

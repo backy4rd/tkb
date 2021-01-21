@@ -14,13 +14,13 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const app: Application = express();
 
-const mssv = process.env.MSSV;
-const matkhau = process.env.MATKHAU;
+const studentId = process.env.STUDENT_ID;
+const password = process.env.PASSWORD;
 const mongoUri = process.env.MONGODB_URI;
 const allowOrigin = process.env.ALLOW_ORIGIN?.split(",");
 const port = process.env.PORT || 8080;
 
-if (!mongoUri || !mssv || !matkhau) {
+if (!mongoUri || !studentId || !password) {
     throw new Error("missing env variable");
 }
 
@@ -42,15 +42,15 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 app.get("/groups/:subjectIds", async function _doGet(req: Request, res: Response) {
     try {
-        const namhoc = +req.query.namhoc;
-        const mahp = req.params.subjectIds as string;
-        const hocky = +req.query.hocky;
+        const _year = +req.query.year;
+        const _subjectIds = req.params.subjectIds;
+        const _semester = +req.query.semester;
 
-        if (!namhoc || !hocky) {
+        if (!_year || !_semester) {
             throw new Error("invalid or missing query parameters");
         }
 
-        const subjectIds = mahp
+        const subjectIds = _subjectIds
             .trim()
             .replace(/\s+/g, "")
             .split(",")
@@ -60,7 +60,7 @@ app.get("/groups/:subjectIds", async function _doGet(req: Request, res: Response
 
         await Promise.all(
             subjectIds.map((subjectId) =>
-                getGroupsAndCache(hocky, namhoc, subjectId, sessionId).then((group) => {
+                getGroupsAndCache(_semester, _year, subjectId, sessionId).then((group) => {
                     responseData[subjectId] = group;
                 })
             )
@@ -72,7 +72,7 @@ app.get("/groups/:subjectIds", async function _doGet(req: Request, res: Response
     } catch (err) {
         if (err.message === "invalid session id") {
             console.log("retrive session id");
-            sessionId = await login(mssv, matkhau);
+            sessionId = await login(studentId, password);
             return _doGet(req, res);
         }
 
@@ -98,29 +98,26 @@ app.get("/subjects", async function (req: Request, res: Response) {
 
 app.get("/subjects/:subjectId", async function _doGet(req: Request, res: Response) {
     try {
-        const mahp = req.params.subjectId.toUpperCase();
+        const _subjectId = req.params.subjectId.toUpperCase();
 
-        const storedSubjectName = await db.find(mahp);
-
+        const storedSubjectName = await db.find(_subjectId);
         if (storedSubjectName !== null) {
             return res.status(200).json({ data: storedSubjectName });
         }
 
-        const subjectName = await getSubjectName(semester, year, mahp, sessionId);
-
+        const subjectName = await getSubjectName(semester, year, _subjectId, sessionId);
         if (subjectName === null) {
             return res.status(404).json({ error: "subject not found" });
         }
 
-        await db.insert(mahp, subjectName);
-
+        await db.insert(_subjectId, subjectName);
         return res.status(200).json({ data: subjectName });
 
         // handle exception
     } catch (err) {
         if (err.message === "invalid session id") {
             console.log("retrive session id");
-            sessionId = await login(mssv, matkhau);
+            sessionId = await login(studentId, password);
             return _doGet(req, res);
         }
 
@@ -133,7 +130,7 @@ app.get("/subjects/:subjectId", async function _doGet(req: Request, res: Respons
 async function init() {
     await db.createConnection(mongoUri);
 
-    const PHPSESSID = await login(mssv, matkhau);
+    const PHPSESSID = await login(studentId, password);
     sessionId = PHPSESSID;
 
     const schoolYear = await getAvalibleSchoolYear(sessionId);
