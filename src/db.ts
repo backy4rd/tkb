@@ -1,3 +1,4 @@
+import * as url from "url";
 import { MongoClient, Collection } from "mongodb";
 
 const collectionName = "tenhocphan";
@@ -6,10 +7,14 @@ class Database {
     public collection: Collection;
 
     public async createConnection(mongoUri: string): Promise<void> {
-        const url = mongoUri.slice(0, mongoUri.lastIndexOf("/"));
-        const dbName = mongoUri.slice(mongoUri.lastIndexOf("/") + 1, mongoUri.indexOf("?"));
+        const { protocol, auth, host, pathname } = url.parse(mongoUri);
 
-        const client = new MongoClient(url, {
+        const uri = `${protocol}//${auth}@${host}`;
+        const dbName = pathname.slice(1); // remove slash
+
+        console.log(uri, dbName);
+
+        const client = new MongoClient(uri, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
         });
